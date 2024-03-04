@@ -26,12 +26,11 @@ app.UseHttpsRedirection();
 app.MapGet("/state", () =>
     {
         var board = game.Board;
-
-
+        
         var visualizedBoard = string.Join(" --- ", [
-            $"{board[0]?.Symbol ?? '1'} | {board[1]?.Symbol ?? '2'} | {board[2]?.Symbol ?? '3'}",
-            $"{board[3]?.Symbol ?? '4'} | {board[4]?.Symbol ?? '5'} | {board[5]?.Symbol ?? '6'}",
-            $"{board[6]?.Symbol ?? '7'} | {board[7]?.Symbol ?? '8'} | {board[8]?.Symbol ?? '9'}"
+            $"{board[0]?.Symbol ?? '0'} | {board[1]?.Symbol ?? '1'} | {board[2]?.Symbol ?? '2'}",
+            $"{board[3]?.Symbol ?? '3'} | {board[4]?.Symbol ?? '4'} | {board[5]?.Symbol ?? '5'}",
+            $"{board[6]?.Symbol ?? '6'} | {board[7]?.Symbol ?? '7'} | {board[8]?.Symbol ?? '8'}"
         ]);
 
         var state = new
