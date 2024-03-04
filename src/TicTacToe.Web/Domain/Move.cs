@@ -1,4 +1,4 @@
-namespace tic_tac_toe.Web.Domain;
+namespace TicTacToe.Web.Domain;
 
 public abstract record Move(int Position, char Symbol)
 {

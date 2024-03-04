@@ -1,4 +1,4 @@
-using tic_tac_toe.Web.Domain;
+using TicTacToe.Web.Domain;
 
 var builder = WebApplication.CreateBuilder(args);
 

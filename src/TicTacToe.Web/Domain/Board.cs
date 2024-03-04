@@ -1,4 +1,4 @@
-namespace tic_tac_toe.Web.Domain;
+namespace TicTacToe.Web.Domain;
 
 public record Board(int Size)
 {

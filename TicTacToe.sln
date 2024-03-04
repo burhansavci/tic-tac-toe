@@ -2,7 +2,7 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{6437F4B4-C473-4C6A-A200-32D165AA8B85}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "tic-tac-toe.Web", "src\tic-tac-toe.Web\tic-tac-toe.Web.csproj", "{E8FEA5DA-9A28-45C2-AC1A-49A966B0D59C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TicTacToe.Web", "src\TicTacToe.Web\TicTacToe.Web.csproj", "{E8FEA5DA-9A28-45C2-AC1A-49A966B0D59C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
