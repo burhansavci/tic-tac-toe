@@ -1,9 +1,12 @@
 <script setup>
-import TheWelcome from '../components/TheWelcome.vue'
+import Board from '@/components/BoardComp.vue'
+
+
+console.log('HomeView.vue')
 </script>
 
 <template>
   <main>
-    <TheWelcome />
+    <Board />
   </main>
 </template>
