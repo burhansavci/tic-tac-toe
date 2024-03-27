@@ -1,3 +1,40 @@
+<script setup>
+import { inject, ref } from 'vue'
+import { gameHubServiceSymbol } from '@/services/gameHubServiceSymbol.js'
+
+const cells = ref(Array(9).fill(''))
+
+const currentPlayer = ref('O')
+
+const gameHubService = inject(gameHubServiceSymbol)
+gameHubService.joinGame().then((res) => {
+  console.log(res)
+  console.log('Player joined game')
+  currentPlayer.value = res.player.symbol.toUpperCase()
+}).catch((error) => {
+  console.error(error)
+  setTimeout(() => {
+    gameHubService.joinGame().then((res) => {
+      console.log(res)
+      console.log('Player joined game')
+      currentPlayer.value = res.player.symbol.toUpperCase()
+    }).catch((error) => {
+      console.error(error)
+    })
+  }, 1000)
+})
+
+const handleCellClick = (index) => {
+  if (cells.value[index]) {
+    return
+  }
+
+  cells.value[index] = currentPlayer.value
+
+  currentPlayer.value = currentPlayer.value === 'X' ? 'O' : 'X'
+}
+</script>
+
 <template>
   <div class="board">
     <div
@@ -10,24 +47,6 @@
     </div>
   </div>
 </template>
-
-<script setup>
-import { ref } from 'vue'
-
-const cells = ref(Array(9).fill(''))
-
-const currentPlayer = ref('X')
-
-const handleCellClick = (index) => {
-  if (cells.value[index]) {
-    return
-  }
-
-  cells.value[index] = currentPlayer.value
-
-  currentPlayer.value = currentPlayer.value === 'X' ? 'O' : 'X'
-}
-</script>
 
 <style scoped>
 .board {

@@ -34,11 +34,11 @@ public class Game
             throw new Exception("Game is not started.");
 
         Board.AddMove(NextPlayer!.Move(position));
-        
+
         Winner = CalculateWinner();
         if (Winner is not null || Turn == MaxTurn)
             State = GameState.Over;
-        
+
         Turn++;
         NextPlayer = NextPlayer == PlayerX ? PlayerO : PlayerX;
     }
@@ -67,12 +67,16 @@ public class Game
         NextPlayer = Random.Shared.Next(0, 2) == 0 ? PlayerX : PlayerO;
     }
 
-    public void Join(string playerName)
+    public Player Join(string playerName)
     {
         if (PlayerX is null)
+        {
             PlayerX = new Player.X(playerName);
-        else
-            PlayerO = new Player.O(playerName);
+            return PlayerX;
+        }
+
+        PlayerO = new Player.O(playerName);
+        return PlayerO;
     }
 
     public void Leave(string playerName)

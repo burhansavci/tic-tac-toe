@@ -12,23 +12,24 @@ public class TicTacToeGameHub : Hub<ITicTacToeGameHubClient>
         _game = game;
     }
 
-    public async Task JoinGame()
+    public async Task<JoinGameResponse> JoinGame()
     {
         if (_game.CanJoin)
         {
             await Groups.AddToGroupAsync(Context.ConnectionId, _game.Id);
-            _game.Join(Context.ConnectionId);
+            var player = _game.Join(Context.ConnectionId);
 
             if (_game.IsFull)
             {
                 _game.Start();
                 await Clients.All.GameStarted();
             }
+            
+            return new JoinGameResponse(player, _game.IsFull, _game.CanJoin, _game.State);
         }
-        else
-        {
-            await Clients.All.GameFull();
-        }
+
+        await Clients.All.GameFull();
+        return new JoinGameResponse(null, _game.IsFull, _game.CanJoin, _game.State);
     }
 
     public async Task LeaveGame()
@@ -45,9 +46,9 @@ public class TicTacToeGameHub : Hub<ITicTacToeGameHubClient>
         {
             throw new Exception("It's not your turn.");
         }
-        
+
         _game.PlayTurn(position);
-        
+
         await Clients.All.GameStateChange();
     }
 
@@ -65,3 +66,5 @@ public interface ITicTacToeGameHubClient
     Task GameStateChange();
     Task GameStarted();
 }
+
+public record JoinGameResponse(Player? Player, bool IsFull, bool CanJoin, GameState State);
