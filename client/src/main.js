@@ -13,7 +13,10 @@ app.use(router)
 const connection = new HubConnectionBuilder()
   .configureLogging('information')
   .withAutomaticReconnect()
-  .withUrl('https://localhost:7031/hub/game', { transport: HttpTransportType.WebSockets, withCredentials: false })
+  .withUrl('https://localhost:7031/hub/game', {
+    transport: HttpTransportType.WebSockets,
+    withCredentials: false
+  })
   .build()
 
 app.use(VueSignalR, { connection })

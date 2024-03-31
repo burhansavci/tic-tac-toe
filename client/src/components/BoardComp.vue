@@ -12,7 +12,8 @@ const gameHub = useSignalR()
 const gameStarted = ref(false)
 const GameState = Object.freeze({ WaitingForPlayers: 1, Started: 2, Over: 3 })
 
-gameHub.invoke('JoinGame')
+gameHub
+  .invoke('JoinGame')
   .then((res) => {
     console.log(res)
     if (res.state === GameState.Started) {
@@ -22,9 +23,10 @@ gameHub.invoke('JoinGame')
       console.log('Player joined game')
       currentPlayer.value = res.player.symbol
     }
-  }).catch((error) => {
-  console.error(error)
-})
+  })
+  .catch((error) => {
+    console.error(error)
+  })
 
 gameHub.on('GameStarted', () => {
   gameStarted.value = true
@@ -36,21 +38,25 @@ const handleCellClick = (index) => {
     return
   }
 
-  gameHub.invoke('PlayTurn', index)
+  gameHub
+    .invoke('PlayTurn', index)
     .then(() => {
       cells.value[index] = { symbol: currentPlayer.value, position: index }
-    }).catch((error) => {
-    console.error(error)
-  })
+    })
+    .catch((error) => {
+      console.error(error)
+    })
 }
 
 const resetGame = () => {
-  gameHub.invoke('ResetGame')
+  gameHub
+    .invoke('ResetGame')
     .then(() => {
       cells.value = Array(9).fill(null)
-    }).catch((error) => {
-    console.error(error)
-  })
+    })
+    .catch((error) => {
+      console.error(error)
+    })
 }
 
 gameHub.on('GameStateChange', (res) => {
@@ -62,7 +68,7 @@ gameHub.on('GameStateChange', (res) => {
     if (res.winner) {
       alert(`Player ${res.winner.symbol} wins!`)
     } else {
-      alert('It\'s a draw!')
+      alert("It's a draw!")
     }
   }
 
@@ -83,7 +89,7 @@ gameHub.on('GameStateChange', (res) => {
     <div
       v-for="(cell, index) in cells"
       :key="index"
-      :class="['cell', { 'cell:empty': !cell, 'cell:disabled': !gameStarted.value}]"
+      :class="['cell', { 'cell:empty': !cell, 'cell:disabled': !gameStarted.value }]"
       @click="handleCellClick(index)"
     >
       {{ cell?.symbol }}
@@ -113,7 +119,6 @@ gameHub.on('GameStateChange', (res) => {
   font-weight: bold;
   height: 100px;
   border: 1px solid var(--color-border);
-
 }
 
 .cell:nth-child(3n) {
@@ -148,5 +153,4 @@ gameHub.on('GameStateChange', (res) => {
   background-color: var(--color-background-disabled);
   cursor: not-allowed;
 }
-
 </style>

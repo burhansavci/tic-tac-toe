@@ -15,5 +15,4 @@ main {
   height: 100vh;
   background-color: var(--color-background);
 }
-
 </style>
