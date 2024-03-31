@@ -11,7 +11,8 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
-    "@microsoft/signalr": "^8.0.0",
+    "@dreamonkey/vue-signalr": "^1.1.0",
+    "@microsoft/signalr": "^7.0.14",
     "vue": "^3.4.15",
     "vue-router": "^4.2.5"
   },

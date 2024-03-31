@@ -1,17 +1,5 @@
 <script setup>
 import { RouterView } from 'vue-router'
-import { gameHubServiceSymbol } from '@/services/gameHubServiceSymbol.js'
-import { inject, onMounted } from 'vue'
-
-const gameHubService = inject(gameHubServiceSymbol)
-
-onMounted(() => {
-  gameHubService.startGameHub().then(() => {
-    console.log('GameHub started')
-  }).catch((error) => {
-    console.error(error)
-  })
-})
 </script>
 
 <template>

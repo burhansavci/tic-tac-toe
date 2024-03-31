@@ -46,6 +46,7 @@
     --color-background-empty: var(--vt-c-black-mute);
     --color-background-empty-hover: var(--vt-c-black-mute);
     --color-background-empty-active: var(--vt-c-black-mute);
+    --color-background-disabled: var(--vt-c-black-mute);
 
     --color-border: var(--vt-c-divider-dark-2);
     --color-border-hover: var(--vt-c-divider-dark-1);

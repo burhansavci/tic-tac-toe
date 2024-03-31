@@ -1,38 +1,81 @@
 <script setup>
-import { inject, ref } from 'vue'
-import { gameHubServiceSymbol } from '@/services/gameHubServiceSymbol.js'
+import { ref } from 'vue'
+import { useSignalR } from '@dreamonkey/vue-signalr'
 
-const cells = ref(Array(9).fill(''))
+const cells = ref(Array(9).fill(null))
+
+console.log(cells.value)
 
 const currentPlayer = ref('O')
 
-const gameHubService = inject(gameHubServiceSymbol)
-gameHubService.joinGame().then((res) => {
-  console.log(res)
-  console.log('Player joined game')
-  currentPlayer.value = res.player.symbol.toUpperCase()
-}).catch((error) => {
-  console.error(error)
-  setTimeout(() => {
-    gameHubService.joinGame().then((res) => {
-      console.log(res)
+const gameHub = useSignalR()
+const gameStarted = ref(false)
+const GameState = Object.freeze({ WaitingForPlayers: 1, Started: 2, Over: 3 })
+
+gameHub.invoke('JoinGame')
+  .then((res) => {
+    console.log(res)
+    if (res.state === GameState.Started) {
+      gameStarted.value = true
+      console.log('You cannot join a game that has already started')
+    } else {
       console.log('Player joined game')
-      currentPlayer.value = res.player.symbol.toUpperCase()
-    }).catch((error) => {
-      console.error(error)
-    })
-  }, 1000)
+      currentPlayer.value = res.player.symbol
+    }
+  }).catch((error) => {
+  console.error(error)
+})
+
+gameHub.on('GameStarted', () => {
+  gameStarted.value = true
+  console.log('Game started')
 })
 
 const handleCellClick = (index) => {
-  if (cells.value[index]) {
+  if (cells.value[index]?.symbol || !gameStarted.value) {
     return
   }
 
-  cells.value[index] = currentPlayer.value
-
-  currentPlayer.value = currentPlayer.value === 'X' ? 'O' : 'X'
+  gameHub.invoke('PlayTurn', index)
+    .then(() => {
+      cells.value[index] = { symbol: currentPlayer.value, position: index }
+    }).catch((error) => {
+    console.error(error)
+  })
 }
+
+const resetGame = () => {
+  gameHub.invoke('ResetGame')
+    .then(() => {
+      cells.value = Array(9).fill(null)
+    }).catch((error) => {
+    console.error(error)
+  })
+}
+
+gameHub.on('GameStateChange', (res) => {
+  console.log(res)
+  cells.value = res.board.moves
+  if (res.state === GameState.Over) {
+    gameStarted.value = false
+    console.log('Game over')
+    if (res.winner) {
+      alert(`Player ${res.winner.symbol} wins!`)
+    } else {
+      alert('It\'s a draw!')
+    }
+  }
+
+  if (res.state === GameState.Started) {
+    gameStarted.value = true
+    console.log('Game started')
+  }
+
+  if (res.state === GameState.WaitingForPlayers) {
+    gameStarted.value = true
+    console.log('Waiting for players')
+  }
+})
 </script>
 
 <template>
@@ -40,11 +83,13 @@ const handleCellClick = (index) => {
     <div
       v-for="(cell, index) in cells"
       :key="index"
-      :class="['cell', { 'cell:empty': !cell }]"
+      :class="['cell', { 'cell:empty': !cell, 'cell:disabled': !gameStarted.value}]"
       @click="handleCellClick(index)"
     >
-      {{ cell }}
+      {{ cell?.symbol }}
     </div>
+    <button @click="resetGame">Reset Game</button>
+    <button @click="gameHub.invoke('LeaveGame')">Leave Game</button>
   </div>
 </template>
 
@@ -97,6 +142,11 @@ const handleCellClick = (index) => {
 
 .cell:empty:active {
   background-color: var(--color-background-empty-active);
+}
+
+.cell:disabled {
+  background-color: var(--color-background-disabled);
+  cursor: not-allowed;
 }
 
 </style>

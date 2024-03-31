@@ -2,26 +2,27 @@ namespace TicTacToe.Web.Domain;
 
 public record Board(int Size)
 {
-    private Move?[] Moves { get; } = new Move?[Size];
+    private readonly Move?[] _moves = new Move?[Size];
+    public IReadOnlyCollection<Move?> Moves => _moves;
 
-    public Move? this[int position] => Moves[position];
+    public Move? this[int position] => _moves[position];
 
     public void AddMove(Move move)
     {
         if (move.Position < 0 || move.Position >= Size)
             throw new Exception("Invalid position.");
 
-        if (Moves[move.Position] != null)
+        if (_moves[move.Position] != null)
             throw new Exception("Position is already taken.");
 
-        Moves[move.Position] = move;
+        _moves[move.Position] = move;
     }
 
     public void Reset()
     {
         for (var i = 0; i < Size; i++)
         {
-            Moves[i] = null;
+            _moves[i] = null;
         }
     }
 }

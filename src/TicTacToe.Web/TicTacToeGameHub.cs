@@ -24,7 +24,7 @@ public class TicTacToeGameHub : Hub<ITicTacToeGameHubClient>
                 _game.Start();
                 await Clients.All.GameStarted();
             }
-            
+
             return new JoinGameResponse(player, _game.IsFull, _game.CanJoin, _game.State);
         }
 
@@ -48,14 +48,15 @@ public class TicTacToeGameHub : Hub<ITicTacToeGameHubClient>
         }
 
         _game.PlayTurn(position);
-
-        await Clients.All.GameStateChange();
+        
+        var response = new GameStateChangeResponse(_game.State, _game.Winner, _game.Board);
+        await Clients.Group(_game.Id).GameStateChange(response);
     }
 
     public async Task ResetGame()
     {
         _game.Reset();
-        await Clients.All.GameNotFull();
+        await Clients.Group(_game.Id).GameStateChange(new GameStateChangeResponse(_game.State, _game.Winner, _game.Board));
     }
 }
 
@@ -63,8 +64,10 @@ public interface ITicTacToeGameHubClient
 {
     Task GameFull();
     Task GameNotFull();
-    Task GameStateChange();
+    Task GameStateChange(GameStateChangeResponse response);
     Task GameStarted();
 }
 
 public record JoinGameResponse(Player? Player, bool IsFull, bool CanJoin, GameState State);
+
+public record GameStateChangeResponse(GameState State, Player? Winner, Board Board);
