@@ -4,7 +4,7 @@ public abstract record Player(string Name, char Symbol)
 {
     public abstract Move Move(int position);
 
-    public sealed record X(string Name) : Player(Name, 'x')
+    public sealed record X(string Name) : Player(Name, 'X')
     {
         public override Move Move(int position)
         {
@@ -12,7 +12,7 @@ public abstract record Player(string Name, char Symbol)
         }
     }
 
-    public sealed record O(string Name) : Player(Name, 'o')
+    public sealed record O(string Name) : Player(Name, 'O')
     {
         public override Move Move(int position)
         {

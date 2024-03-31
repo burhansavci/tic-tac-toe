@@ -48,7 +48,7 @@ public class Game
         Board.Reset();
         Turn = 1;
         Winner = null;
-        State = GameState.WaitingForPlayers;
+        State = GameState.Started;
         NextPlayer = NextPlayer == PlayerX ? PlayerO : PlayerX;
     }
 
@@ -84,10 +84,12 @@ public class Game
         if (PlayerX?.Name == playerName)
         {
             PlayerX = null;
+            State = GameState.WaitingForPlayers;
         }
         else if (PlayerO?.Name == playerName)
         {
             PlayerO = null;
+            State = GameState.WaitingForPlayers;
         }
     }
 
