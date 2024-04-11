@@ -7,34 +7,50 @@ const cells = ref(Array(9).fill(null))
 console.log(cells.value)
 
 const currentPlayer = ref('O')
+const nextPlayer = ref('')
 
 const gameHub = useSignalR()
-const gameStarted = ref(false)
 const GameState = Object.freeze({ WaitingForPlayers: 1, Started: 2, Over: 3 })
+const currentGameState = ref(GameState.WaitingForPlayers)
 
-gameHub
-  .invoke('JoinGame')
-  .then((res) => {
-    console.log(res)
-    if (res.state === GameState.Started) {
-      gameStarted.value = true
-      console.log('You cannot join a game that has already started')
-    } else {
-      console.log('Player joined game')
+
+  gameHub
+    .invoke('JoinGame')
+    .then((res) => {
+      console.log(res)
       currentPlayer.value = res.player.symbol
-    }
-  })
-  .catch((error) => {
-    console.error(error)
-  })
+      currentGameState.value = res.state
+      console.log('Player joined game')
+    })
+    .catch((error) => {
+      console.error(error)
+    })
 
-gameHub.on('GameStarted', () => {
-  gameStarted.value = true
-  console.log('Game started')
+
+
+gameHub.on('GameStateChange', (res) => {
+  console.log(res)
+  cells.value = res.board.moves
+  currentGameState.value = res.state
+  currentPlayer.value = res.currentPlayer.symbol
+  nextPlayer.value = res.nextPlayer.symbol
+
+  if (currentGameState.value === GameState.Over) {
+    res.winner ? alert(`Player ${res.winner.symbol} won!`) : alert('It\'s a draw!')
+    console.log('Game over')
+  }
+
+  if (currentGameState.value === GameState.Started) {
+    console.log('Game started')
+  }
+
+  if (currentGameState.value === GameState.WaitingForPlayers) {
+    console.log('Waiting for players')
+  }
 })
 
 const handleCellClick = (index) => {
-  if (cells.value[index]?.symbol || !gameStarted.value) {
+  if (cells.value[index]?.symbol || currentGameState.value !== GameState.Started) {
     return
   }
 
@@ -58,30 +74,6 @@ const resetGame = () => {
       console.error(error)
     })
 }
-
-gameHub.on('GameStateChange', (res) => {
-  console.log(res)
-  cells.value = res.board.moves
-  if (res.state === GameState.Over) {
-    gameStarted.value = false
-    console.log('Game over')
-    if (res.winner) {
-      alert(`Player ${res.winner.symbol} wins!`)
-    } else {
-      alert("It's a draw!")
-    }
-  }
-
-  if (res.state === GameState.Started) {
-    gameStarted.value = true
-    console.log('Game started')
-  }
-
-  if (res.state === GameState.WaitingForPlayers) {
-    gameStarted.value = true
-    console.log('Waiting for players')
-  }
-})
 </script>
 
 <template>
@@ -89,7 +81,7 @@ gameHub.on('GameStateChange', (res) => {
     <div
       v-for="(cell, index) in cells"
       :key="index"
-      :class="['cell', { 'cell:empty': !cell, 'cell:disabled': !gameStarted.value }]"
+      :class="['cell', { 'cell:empty': !cell, 'cell:disabled': currentGameState !== GameState.Started}]"
       @click="handleCellClick(index)"
     >
       {{ cell?.symbol }}
@@ -139,6 +131,7 @@ gameHub.on('GameStateChange', (res) => {
 
 .cell:empty {
   background-color: var(--color-background-empty);
+  cursor: pointer;
 }
 
 .cell:empty:hover {

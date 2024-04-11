@@ -12,24 +12,15 @@ public class TicTacToeGameHub : Hub<ITicTacToeGameHubClient>
         _game = game;
     }
 
-    public async Task<JoinGameResponse> JoinGame()
+    public async Task JoinGame()
     {
-        if (_game.CanJoin)
-        {
-            await Groups.AddToGroupAsync(Context.ConnectionId, _game.Id);
-            var player = _game.Join(Context.ConnectionId);
+        var joinedGame = _game.TryJoin(Context.ConnectionId, out var player);
 
-            if (_game.IsFull)
-            {
-                _game.Start();
-                await Clients.All.GameStarted();
-            }
+        if (!joinedGame) throw new Exception("You can't join this game.");
 
-            return new JoinGameResponse(player, _game.IsFull, _game.CanJoin, _game.State);
-        }
+        await Groups.AddToGroupAsync(Context.ConnectionId, _game.Id);
 
-        await Clients.All.GameFull();
-        return new JoinGameResponse(null, _game.IsFull, _game.CanJoin, _game.State);
+        if (_game.State == GameState.Started) await Clients.Group(_game.Id).GameStateChange(new GameStateChangeResponse(_game.State, _game.Winner, _game.Board, _game.NextPlayer, player));
     }
 
     public async Task LeaveGame()
@@ -37,7 +28,8 @@ public class TicTacToeGameHub : Hub<ITicTacToeGameHubClient>
         _game.Leave(Context.ConnectionId);
 
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, _game.Id);
-        await Clients.All.GameNotFull();
+        
+        await Clients.Group(_game.Id).GameStateChange(new GameStateChangeResponse(_game.State, _game.Winner, _game.Board, _game.NextPlayer,));
     }
 
     public async Task PlayTurn(int position)
@@ -48,26 +40,23 @@ public class TicTacToeGameHub : Hub<ITicTacToeGameHubClient>
         }
 
         _game.PlayTurn(position);
-        
-        var response = new GameStateChangeResponse(_game.State, _game.Winner, _game.Board);
+
+        var response = new GameStateChangeResponse(_game.State, _game.Winner, _game.Board, _game.NextPlayer);
         await Clients.Group(_game.Id).GameStateChange(response);
     }
 
     public async Task ResetGame()
     {
         _game.Reset();
-        await Clients.Group(_game.Id).GameStateChange(new GameStateChangeResponse(_game.State, _game.Winner, _game.Board));
+        await Clients.Group(_game.Id).GameStateChange(new GameStateChangeResponse(_game.State, _game.Winner, _game.Board, _game.NextPlayer));
     }
 }
 
 public interface ITicTacToeGameHubClient
 {
-    Task GameFull();
-    Task GameNotFull();
     Task GameStateChange(GameStateChangeResponse response);
-    Task GameStarted();
 }
 
-public record JoinGameResponse(Player? Player, bool IsFull, bool CanJoin, GameState State);
+public record JoinGameResponse(Player? Player, bool CanJoin, GameState State);
 
-public record GameStateChangeResponse(GameState State, Player? Winner, Board Board);
+public record GameStateChangeResponse(GameState State, Player? Winner, Board Board, Player? NextPlayer, Player CurrentPlayer);

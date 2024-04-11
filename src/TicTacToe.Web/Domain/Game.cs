@@ -28,30 +28,6 @@ public class Game
     public bool CanJoin => !IsFull && State == GameState.WaitingForPlayers;
     public GameState State { get; private set; } = GameState.WaitingForPlayers;
 
-    public void PlayTurn(int position)
-    {
-        if (State != GameState.Started)
-            throw new Exception("Game is not started.");
-
-        Board.AddMove(NextPlayer!.Move(position));
-
-        Winner = CalculateWinner();
-        if (Winner is not null || Turn == MaxTurn)
-            State = GameState.Over;
-
-        Turn++;
-        NextPlayer = NextPlayer == PlayerX ? PlayerO : PlayerX;
-    }
-
-    public void Reset()
-    {
-        Board.Reset();
-        Turn = 1;
-        Winner = null;
-        State = GameState.Started;
-        NextPlayer = NextPlayer == PlayerX ? PlayerO : PlayerX;
-    }
-
     public void Start()
     {
         if (PlayerX is null || PlayerO is null)
@@ -67,16 +43,35 @@ public class Game
         NextPlayer = Random.Shared.Next(0, 2) == 0 ? PlayerX : PlayerO;
     }
 
-    public Player Join(string playerName)
+    public void Reset()
     {
+        Board.Reset();
+        Turn = 1;
+        Winner = null;
+        State = GameState.Started;
+        NextPlayer = NextPlayer == PlayerX ? PlayerO : PlayerX;
+    }
+    
+    public bool TryJoin(string playerName, out Player player)
+    {
+        player = null!;
+
+        if (CanJoin is false) return false;
+        
         if (PlayerX is null)
         {
             PlayerX = new Player.X(playerName);
-            return PlayerX;
+            player = PlayerX;
+        }
+        else if (PlayerO is null)
+        {
+            PlayerO = new Player.O(playerName);
+            player = PlayerO;
         }
 
-        PlayerO = new Player.O(playerName);
-        return PlayerO;
+        if (IsFull) Start();
+
+        return true;
     }
 
     public void Leave(string playerName)
@@ -91,6 +86,21 @@ public class Game
             PlayerO = null;
             State = GameState.WaitingForPlayers;
         }
+    }
+
+    public void PlayTurn(int position)
+    {
+        if (State != GameState.Started)
+            throw new Exception("Game is not started.");
+
+        Board.AddMove(NextPlayer!.Move(position));
+
+        Winner = CalculateWinner();
+        if (Winner is not null || Turn == MaxTurn)
+            State = GameState.Over;
+
+        Turn++;
+        NextPlayer = NextPlayer == PlayerX ? PlayerO : PlayerX;
     }
 
     private Player? CalculateWinner()
