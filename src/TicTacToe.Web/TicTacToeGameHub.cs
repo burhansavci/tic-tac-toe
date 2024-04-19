@@ -12,7 +12,7 @@ public class TicTacToeGameHub : Hub<ITicTacToeGameHubClient>
         _game = game;
     }
 
-    public async Task JoinGame()
+    public async Task<JoinGameResponse> JoinGame()
     {
         var joinedGame = _game.TryJoin(Context.ConnectionId, out var player);
 
@@ -20,7 +20,11 @@ public class TicTacToeGameHub : Hub<ITicTacToeGameHubClient>
 
         await Groups.AddToGroupAsync(Context.ConnectionId, _game.Id);
 
-        if (_game.State == GameState.Started) await Clients.Group(_game.Id).GameStateChange(new GameStateChangeResponse(_game.State, _game.Winner, _game.Board, _game.NextPlayer, player));
+        if (_game.State == GameState.Started)
+            await Clients.Group(_game.Id)
+                .GameStateChange(new GameStateChangeResponse(_game.State, _game.Winner, _game.Board, _game.NextPlayer));
+
+        return new JoinGameResponse(_game.State, player);
     }
 
     public async Task LeaveGame()
@@ -28,8 +32,9 @@ public class TicTacToeGameHub : Hub<ITicTacToeGameHubClient>
         _game.Leave(Context.ConnectionId);
 
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, _game.Id);
-        
-        await Clients.Group(_game.Id).GameStateChange(new GameStateChangeResponse(_game.State, _game.Winner, _game.Board, _game.NextPlayer,));
+
+        await Clients.Group(_game.Id)
+            .GameStateChange(new GameStateChangeResponse(_game.State, _game.Winner, _game.Board, _game.NextPlayer));
     }
 
     public async Task PlayTurn(int position)
@@ -48,15 +53,18 @@ public class TicTacToeGameHub : Hub<ITicTacToeGameHubClient>
     public async Task ResetGame()
     {
         _game.Reset();
-        await Clients.Group(_game.Id).GameStateChange(new GameStateChangeResponse(_game.State, _game.Winner, _game.Board, _game.NextPlayer));
+        await Clients.Group(_game.Id)
+            .GameStateChange(new GameStateChangeResponse(_game.State, _game.Winner, _game.Board, _game.NextPlayer));
     }
 }
 
 public interface ITicTacToeGameHubClient
 {
     Task GameStateChange(GameStateChangeResponse response);
+
+    Task JoinGame(JoinGameResponse response);
 }
 
-public record JoinGameResponse(Player? Player, bool CanJoin, GameState State);
+public record JoinGameResponse(GameState State, Player Player);
 
-public record GameStateChangeResponse(GameState State, Player? Winner, Board Board, Player? NextPlayer, Player CurrentPlayer);
+public record GameStateChangeResponse(GameState State, Player? Winner, Board Board, Player? NextPlayer);

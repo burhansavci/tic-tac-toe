@@ -6,7 +6,7 @@ const cells = ref(Array(9).fill(null))
 
 console.log(cells.value)
 
-const currentPlayer = ref('O')
+const player = ref('')
 const nextPlayer = ref('')
 
 const gameHub = useSignalR()
@@ -14,26 +14,23 @@ const GameState = Object.freeze({ WaitingForPlayers: 1, Started: 2, Over: 3 })
 const currentGameState = ref(GameState.WaitingForPlayers)
 
 
-  gameHub
-    .invoke('JoinGame')
-    .then((res) => {
-      console.log(res)
-      currentPlayer.value = res.player.symbol
-      currentGameState.value = res.state
-      console.log('Player joined game')
-    })
-    .catch((error) => {
-      console.error(error)
-    })
-
-
+gameHub
+  .invoke('JoinGame')
+  .then((res) => {
+    console.log(res)
+    player.value = res.player
+    currentGameState.value = res.state
+    console.log('Player joined game')
+  })
+  .catch((error) => {
+    console.error(error)
+  })
 
 gameHub.on('GameStateChange', (res) => {
   console.log(res)
   cells.value = res.board.moves
   currentGameState.value = res.state
-  currentPlayer.value = res.currentPlayer.symbol
-  nextPlayer.value = res.nextPlayer.symbol
+  nextPlayer.value = res.nextPlayer
 
   if (currentGameState.value === GameState.Over) {
     res.winner ? alert(`Player ${res.winner.symbol} won!`) : alert('It\'s a draw!')
@@ -50,14 +47,25 @@ gameHub.on('GameStateChange', (res) => {
 })
 
 const handleCellClick = (index) => {
-  if (cells.value[index]?.symbol || currentGameState.value !== GameState.Started) {
+  if (cells.value[index]?.symbol) {
+    alert('Cell already taken!')
+    return
+  }
+
+  if (currentGameState.value !== GameState.Started) {
+    alert('Game is not started yet!')
+    return
+  }
+
+  if (player.value.name !== nextPlayer.value.name) {
+    alert('It\'s not your turn!')
     return
   }
 
   gameHub
     .invoke('PlayTurn', index)
     .then(() => {
-      cells.value[index] = { symbol: currentPlayer.value, position: index }
+      cells.value[index] = { symbol: player.value.symbol, position: index }
     })
     .catch((error) => {
       console.error(error)

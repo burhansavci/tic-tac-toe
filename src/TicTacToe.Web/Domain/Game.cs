@@ -49,15 +49,15 @@ public class Game
         Turn = 1;
         Winner = null;
         State = GameState.Started;
-        NextPlayer = NextPlayer == PlayerX ? PlayerO : PlayerX;
+        NextPlayer = Random.Shared.Next(0, 2) == 0 ? PlayerX : PlayerO;
     }
-    
+
     public bool TryJoin(string playerName, out Player player)
     {
         player = null!;
 
         if (CanJoin is false) return false;
-        
+
         if (PlayerX is null)
         {
             PlayerX = new Player.X(playerName);
