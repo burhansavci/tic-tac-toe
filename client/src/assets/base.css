@@ -44,7 +44,7 @@
     --color-background-soft: var(--vt-c-black-soft);
     --color-background-mute: var(--vt-c-black-mute);
     --color-background-empty: var(--vt-c-black-mute);
-    --color-background-empty-hover: var(--vt-c-black-mute);
+    --color-background-empty-hover: var(--vt-c-black-soft);
     --color-background-empty-active: var(--vt-c-black-mute);
     --color-background-disabled: var(--vt-c-black-mute);
 

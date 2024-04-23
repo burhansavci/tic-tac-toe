@@ -5,66 +5,88 @@ namespace TicTacToe.Web;
 
 public class TicTacToeGameHub : Hub<ITicTacToeGameHubClient>
 {
-    private readonly Game _game;
+    private readonly List<Game> _games;
+    private const string GamesStatutesGroup = "GamesStatutes";
 
-    public TicTacToeGameHub(Game game)
+    public TicTacToeGameHub(List<Game> games)
     {
-        _game = game;
+        _games = games;
     }
 
-    public async Task<JoinGameResponse> JoinGame()
+    public async Task<List<GameStateChangeResponse>> SubscribeToGamesStatutes()
     {
-        var joinedGame = _game.TryJoin(Context.ConnectionId, out var player);
+        await Groups.AddToGroupAsync(Context.ConnectionId, GamesStatutesGroup);
+        
+        return _games.Select(x => new GameStateChangeResponse(x.Id, x.State, x.Winner, x.Board, x.NextPlayer)).ToList();
+    }
+
+    public async Task UnsubscribeFromGamesStatutes() =>
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, GamesStatutesGroup);
+
+    public async Task<JoinGameResponse> JoinGame(string gameId)
+    {
+        var game = _games.Single(x => x.Id == gameId);
+
+        var joinedGame = game.TryJoin(Context.ConnectionId, out var player);
 
         if (!joinedGame) throw new Exception("You can't join this game.");
 
-        await Groups.AddToGroupAsync(Context.ConnectionId, _game.Id);
+        await Groups.AddToGroupAsync(Context.ConnectionId, game.Id);
 
-        if (_game.State == GameState.Started)
-            await Clients.Group(_game.Id)
-                .GameStateChange(new GameStateChangeResponse(_game.State, _game.Winner, _game.Board, _game.NextPlayer));
-
-        return new JoinGameResponse(_game.State, player);
-    }
-
-    public async Task LeaveGame()
-    {
-        _game.Leave(Context.ConnectionId);
-
-        await Groups.RemoveFromGroupAsync(Context.ConnectionId, _game.Id);
-
-        await Clients.Group(_game.Id)
-            .GameStateChange(new GameStateChangeResponse(_game.State, _game.Winner, _game.Board, _game.NextPlayer));
-    }
-
-    public async Task PlayTurn(int position)
-    {
-        if (Context.ConnectionId != _game.NextPlayer!.Name)
+        if (game.State == GameState.Started)
         {
-            throw new Exception("It's not your turn.");
+            var response = new GameStateChangeResponse(game.Id, game.State, game.Winner, game.Board, game.NextPlayer);
+            await Clients.Group(game.Id).GameStateChange(response);
+            await Clients.Group(GamesStatutesGroup).GameStateChange(response);
         }
 
-        _game.PlayTurn(position);
-
-        var response = new GameStateChangeResponse(_game.State, _game.Winner, _game.Board, _game.NextPlayer);
-        await Clients.Group(_game.Id).GameStateChange(response);
+        return new JoinGameResponse(game.State, player);
     }
 
-    public async Task ResetGame()
+    public async Task LeaveGame(string gameId)
     {
-        _game.Reset();
-        await Clients.Group(_game.Id)
-            .GameStateChange(new GameStateChangeResponse(_game.State, _game.Winner, _game.Board, _game.NextPlayer));
+        var game = _games.Single(x => x.Id == gameId);
+
+        game.Leave(Context.ConnectionId);
+
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, game.Id);
+
+        var response = new GameStateChangeResponse(game.Id, game.State, game.Winner, game.Board, game.NextPlayer);
+        await Clients.Group(game.Id).GameStateChange(response);
+        await Clients.Group(GamesStatutesGroup).GameStateChange(response);
+    }
+
+    public async Task PlayTurn(string gameId, int position)
+    {
+        var game = _games.Single(x => x.Id == gameId);
+
+        if (Context.ConnectionId != game.NextPlayer!.Name)
+            throw new Exception("It's not your turn.");
+
+        game.PlayTurn(position);
+
+        var response = new GameStateChangeResponse(game.Id, game.State, game.Winner, game.Board, game.NextPlayer);
+        await Clients.Group(game.Id).GameStateChange(response);
+        await Clients.Group(GamesStatutesGroup).GameStateChange(response);
+    }
+
+    public async Task ResetGame(string gameId)
+    {
+        var game = _games.Single(x => x.Id == gameId);
+
+        game.Reset();
+
+        var response = new GameStateChangeResponse(game.Id, game.State, game.Winner, game.Board, game.NextPlayer);
+        await Clients.Group(game.Id).GameStateChange(response);
+        await Clients.Group(GamesStatutesGroup).GameStateChange(response);
     }
 }
 
 public interface ITicTacToeGameHubClient
 {
     Task GameStateChange(GameStateChangeResponse response);
-
-    Task JoinGame(JoinGameResponse response);
 }
 
 public record JoinGameResponse(GameState State, Player Player);
 
-public record GameStateChangeResponse(GameState State, Player? Winner, Board Board, Player? NextPlayer);
+public record GameStateChangeResponse(string Id, GameState State, Player? Winner, Board Board, Player? NextPlayer);

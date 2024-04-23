@@ -19,7 +19,14 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddSingleton<Game>();
+var games = new List<Game>
+{
+    new(),
+    new(),
+    new()
+};
+
+builder.Services.AddSingleton(games);
 
 var app = builder.Build();
 

@@ -2,6 +2,13 @@
 import { ref } from 'vue'
 import { useSignalR } from '@dreamonkey/vue-signalr'
 
+const props = defineProps({
+  gameId: {
+    type: String,
+    required: true
+  }
+})
+
 const cells = ref(Array(9).fill(null))
 
 console.log(cells.value)
@@ -13,9 +20,8 @@ const gameHub = useSignalR()
 const GameState = Object.freeze({ WaitingForPlayers: 1, Started: 2, Over: 3 })
 const currentGameState = ref(GameState.WaitingForPlayers)
 
-
 gameHub
-  .invoke('JoinGame')
+  .invoke('JoinGame', props.gameId)
   .then((res) => {
     console.log(res)
     player.value = res.player
@@ -63,7 +69,7 @@ const handleCellClick = (index) => {
   }
 
   gameHub
-    .invoke('PlayTurn', index)
+    .invoke('PlayTurn', props.gameId, index)
     .then(() => {
       cells.value[index] = { symbol: player.value.symbol, position: index }
     })
@@ -74,7 +80,7 @@ const handleCellClick = (index) => {
 
 const resetGame = () => {
   gameHub
-    .invoke('ResetGame')
+    .invoke('ResetGame', props.gameId)
     .then(() => {
       cells.value = Array(9).fill(null)
     })
